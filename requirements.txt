@@ -1,0 +1,8 @@
+pdfplumber
+pandas
+torch
+FlagEmbedding
+langchain-groq
+streamlit
+qdrant-client
+py_vncorenlp
