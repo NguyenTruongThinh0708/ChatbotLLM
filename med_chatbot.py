@@ -7,7 +7,6 @@ from embedder import EmbeddingGenerator
 from vector_db import VectorDB
 from retriever import Retriever
 from generator import Generator
-from config import PDF_PATH, OUTPUT_LOG, OUTPUT_JSON_CLEAN
 
 # Hàm khởi tạo các đối tượng (cache để tránh lặp lại)
 @st.cache_resource
@@ -64,3 +63,4 @@ if query := st.chat_input("Nhập câu hỏi: "):
     
 
     print("[LOG] Hoàn tất phản hồi.")
+
