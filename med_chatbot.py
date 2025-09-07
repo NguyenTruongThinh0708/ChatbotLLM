@@ -24,7 +24,7 @@ def init_components():
     return data_preprocessor, embedder, vector_db, retriever, generator
 
 # Gọi hàm khởi tạo
-data_preprocessor, embedder, vector_db, retriever, generator = init_components()
+embedder, vector_db, retriever, generator = init_components()
 
 # Giao diện chat
 st.title("Medical RAG Chatbot")
@@ -63,4 +63,5 @@ if query := st.chat_input("Nhập câu hỏi: "):
     
 
     print("[LOG] Hoàn tất phản hồi.")
+
 
