@@ -3,8 +3,6 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import streamlit as st
-from data_loader import DataLoader
-from preprocessor import DataPreprocessor
 from embedder import EmbeddingGenerator
 from vector_db import VectorDB
 from retriever import Retriever
@@ -15,8 +13,6 @@ from config import PDF_PATH, OUTPUT_LOG, OUTPUT_JSON_CLEAN
 @st.cache_resource
 def init_components():
     print("[LOG] Khởi tạo các module...")
-    print("[LOG] Đang khởi tạo DataLoader...")
-    data_preprocessor = DataPreprocessor()
     print("[LOG] Đang khởi tạo EmbeddingGenerator...")
     embedder = EmbeddingGenerator()
     print("[LOG] Đang khởi tạo VectorDB...")
@@ -66,4 +62,5 @@ if query := st.chat_input("Nhập câu hỏi: "):
     with st.chat_message("assistant"):
         st.markdown(response)
     
+
     print("[LOG] Hoàn tất phản hồi.")
