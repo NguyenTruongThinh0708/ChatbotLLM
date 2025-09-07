@@ -7,7 +7,7 @@ load_dotenv()
 # Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Thư mục chứa config.py
 PDF_PATH = os.path.join(BASE_DIR, "data", "Phần 11.pdf")
-VNCORENLP_SAVE_DIR = os.getenv("VNCORENLP_SAVE_DIR", os.path.join(os.getenv("TMPDIR", os.getenv("TEMP", "/tmp")), "vncorenlp"))
+VNCORENLP_SAVE_DIR = os.getenv("VNCORENLP_SAVE_DIR", os.path.join(BASE_DIR, "models", "vncorenlp"))
 OUTPUT_LOG = os.path.join(BASE_DIR, "logs", "logs.txt")
 OUTPUT_JSON_CLEAN = os.path.join(BASE_DIR, "data", "pages_clean_mode.json")
 
