@@ -4,6 +4,7 @@ import py_vncorenlp
 import logging
 import shutil
 from retry import retry
+import requests
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -13,15 +14,24 @@ _vncorenlp_instance = None
 class VnTextProcessor:
     """
     Wrapper cho VnCoreNLP, dùng mô hình Singleton.
-    Tự động tải model nếu chưa tồn tại, tối ưu cho Windows và Streamlit Cloud (Linux).
+    Ưu tiên sử dụng model từ repo (models/vncorenlp), tải từ server nếu cần.
     """
     def __init__(self, save_dir: str = None, annotators: list = None):
         global _vncorenlp_instance
 
-        # Dùng thư mục tạm tương thích với Windows và Linux
+        # Đường dẫn gốc của repo trên Streamlit Cloud
+        repo_base_dir = os.path.dirname(os.path.abspath(__file__))
+        repo_vncorenlp_dir = os.path.join(repo_base_dir, "models", "vncorenlp")
+
+        # Dùng thư mục từ repo nếu có, nếu không thì dùng thư mục tạm
         if save_dir is None:
-            save_dir = os.path.join(os.getenv("TMPDIR", os.getenv("TEMP", "/tmp")), "vncorenlp")
-        
+            if os.path.exists(os.path.join(repo_vncorenlp_dir, "VnCoreNLP-1.2.jar")) and os.path.exists(os.path.join(repo_vncorenlp_dir, "models")):
+                save_dir = repo_vncorenlp_dir
+                logger.info(f"Sử dụng model VnCoreNLP từ repo: {save_dir}")
+            else:
+                save_dir = os.path.join(os.getenv("TMPDIR", os.getenv("TEMP", "/tmp")), "vncorenlp")
+                logger.info(f"Sử dụng thư mục tạm: {save_dir}")
+
         annotators = annotators or ["wseg"]
         logger.info(f"Khởi tạo VnTextProcessor với save_dir: {save_dir}")
 
@@ -31,18 +41,29 @@ class VnTextProcessor:
 
         model_jar_path = os.path.join(save_dir, "VnCoreNLP-1.2.jar")
         if not os.path.exists(model_jar_path):
-            logger.info(f"Model chưa tồn tại tại {save_dir}. Đang tải về...")
+            logger.info(f"Model chưa tồn tại tại {save_dir}. Đang kiểm tra và tải về...")
             try:
-                # Xóa toàn bộ thư mục save_dir để tránh xung đột
-                if os.path.exists(save_dir):
-                    logger.info(f"Xóa thư mục xung đột: {save_dir}")
-                    shutil.rmtree(save_dir, ignore_errors=True)  # Xóa toàn bộ save_dir
-                os.makedirs(save_dir, exist_ok=True)  # Tạo lại save_dir
+                # Kiểm tra kết nối mạng đến server VnCoreNLP
+                response = requests.get("https://vncorenlp.vietnlp.ai", timeout=5)
+                if response.status_code != 200:
+                    raise RuntimeError("Không thể kết nối đến server VnCoreNLP. Kiểm tra mạng.")
+
+                # Xóa toàn bộ thư mục save_dir để tránh xung đột (nếu dùng thư mục tạm)
+                if save_dir.startswith(os.path.join(os.getenv("TMPDIR", os.getenv("TEMP", "/tmp")), "vncorenlp")):
+                    if os.path.exists(save_dir):
+                        logger.info(f"Xóa thư mục tạm xung đột: {save_dir}")
+                        shutil.rmtree(save_dir, ignore_errors=True)
+                    os.makedirs(save_dir, exist_ok=True)
+
+                # Tải model với retry nếu không dùng repo
                 self._download_model_with_retry(save_dir)
                 logger.info("Tải model thành công.")
+            except requests.RequestException as e:
+                logger.error(f"Lỗi kết nối mạng: {str(e)}")
+                raise RuntimeError(f"Không thể tải model VnCoreNLP vào {save_dir}. Kiểm tra kết nối mạng. Error: {str(e)}")
             except Exception as e:
                 logger.error(f"Lỗi khi tải model: {str(e)}")
-                raise RuntimeError(f"Không thể tải model VnCoreNLP vào {save_dir}. Kiểm tra kết nối mạng hoặc quyền write folder. Error: {str(e)}")
+                raise RuntimeError(f"Không thể tải model VnCoreNLP vào {save_dir}. Kiểm tra quyền write folder hoặc kết nối mạng. Error: {str(e)}")
 
         try:
             self.processor = py_vncorenlp.VnCoreNLP(
