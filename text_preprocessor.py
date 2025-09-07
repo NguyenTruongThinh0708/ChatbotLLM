@@ -14,7 +14,7 @@ _vncorenlp_instance = None
 class VnTextProcessor:
     """
     Wrapper cho VnCoreNLP, dùng mô hình Singleton.
-    Ưu tiên sử dụng model từ repo (models/vncorenlp), tải từ server nếu cần, có fallback.
+    Ưu tiên sử dụng model từ repo (models/vncorenlp), chỉ tải từ server nếu cần.
     """
     def __init__(self, save_dir: str = None, annotators: list = None):
         global _vncorenlp_instance
@@ -23,9 +23,11 @@ class VnTextProcessor:
         repo_base_dir = os.path.dirname(os.path.abspath(__file__))
         repo_vncorenlp_dir = os.path.join(repo_base_dir, "models", "vncorenlp")
 
-        # Dùng thư mục từ repo nếu có, nếu không thì dùng thư mục tạm hoặc save_dir từ config
+        # Dùng thư mục từ repo nếu có file .jar và thư mục models, nếu không thì dùng save_dir hoặc thư mục tạm
         if save_dir is None:
-            if os.path.exists(os.path.join(repo_vncorenlp_dir, "VnCoreNLP-1.2.jar")) and os.path.exists(os.path.join(repo_vncorenlp_dir, "models")):
+            if (os.path.exists(os.path.join(repo_vncorenlp_dir, "VnCoreNLP-1.2.jar")) and 
+                os.path.exists(os.path.join(repo_vncorenlp_dir, "models")) and 
+                os.path.getsize(os.path.join(repo_vncorenlp_dir, "VnCoreNLP-1.2.jar")) > 0):
                 save_dir = repo_vncorenlp_dir
                 logger.info(f"Sử dụng model VnCoreNLP từ repo: {save_dir}")
             else:
@@ -46,8 +48,10 @@ class VnTextProcessor:
                 # Kiểm tra kết nối mạng đến server VnCoreNLP
                 response = requests.get("https://vncorenlp.vietnlp.ai", timeout=5)
                 if response.status_code != 200:
-                    logger.warning("Không thể kết nối đến server VnCoreNLP. Sử dụng repo hoặc fallback.")
-                    if os.path.exists(repo_vncorenlp_dir):
+                    logger.warning("Không thể kết nối đến server VnCoreNLP. Sử dụng repo nếu có.")
+                    if (os.path.exists(repo_vncorenlp_dir) and 
+                        os.path.exists(os.path.join(repo_vncorenlp_dir, "VnCoreNLP-1.2.jar")) and 
+                        os.path.getsize(os.path.join(repo_vncorenlp_dir, "VnCoreNLP-1.2.jar")) > 0):
                         save_dir = repo_vncorenlp_dir
                         logger.info(f"Sử dụng fallback từ repo: {save_dir}")
                     else:
@@ -65,14 +69,18 @@ class VnTextProcessor:
                     logger.info("Tải model thành công.")
             except requests.RequestException as e:
                 logger.error(f"Lỗi kết nối mạng: {str(e)}")
-                if os.path.exists(repo_vncorenlp_dir):
+                if (os.path.exists(repo_vncorenlp_dir) and 
+                    os.path.exists(os.path.join(repo_vncorenlp_dir, "VnCoreNLP-1.2.jar")) and 
+                    os.path.getsize(os.path.join(repo_vncorenlp_dir, "VnCoreNLP-1.2.jar")) > 0):
                     save_dir = repo_vncorenlp_dir
                     logger.info(f"Sử dụng fallback từ repo: {save_dir}")
                 else:
                     raise RuntimeError(f"Không thể tải model VnCoreNLP vào {save_dir}. Kiểm tra kết nối mạng. Error: {str(e)}")
             except Exception as e:
                 logger.error(f"Lỗi khi tải model: {str(e)}")
-                if os.path.exists(repo_vncorenlp_dir):
+                if (os.path.exists(repo_vncorenlp_dir) and 
+                    os.path.exists(os.path.join(repo_vncorenlp_dir, "VnCoreNLP-1.2.jar")) and 
+                    os.path.getsize(os.path.join(repo_vncorenlp_dir, "VnCoreNLP-1.2.jar")) > 0):
                     save_dir = repo_vncorenlp_dir
                     logger.info(f"Sử dụng fallback từ repo: {save_dir}")
                 else:
