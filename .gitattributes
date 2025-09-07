@@ -1,0 +1,2 @@
+vncorenlp/* filter=lfs diff=lfs merge=lfs -text
+models/vncorenlp/* filter=lfs diff=lfs merge=lfs -text
