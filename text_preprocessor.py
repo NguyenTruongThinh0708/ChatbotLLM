@@ -14,7 +14,7 @@ _vncorenlp_instance = None
 class VnTextProcessor:
     """
     Wrapper cho VnCoreNLP, dùng mô hình Singleton.
-    Ưu tiên sử dụng model từ repo (models/vncorenlp), tải từ server nếu cần.
+    Ưu tiên sử dụng model từ repo (models/vncorenlp), tải từ server nếu cần, có fallback.
     """
     def __init__(self, save_dir: str = None, annotators: list = None):
         global _vncorenlp_instance
@@ -23,7 +23,7 @@ class VnTextProcessor:
         repo_base_dir = os.path.dirname(os.path.abspath(__file__))
         repo_vncorenlp_dir = os.path.join(repo_base_dir, "models", "vncorenlp")
 
-        # Dùng thư mục từ repo nếu có, nếu không thì dùng thư mục tạm
+        # Dùng thư mục từ repo nếu có, nếu không thì dùng thư mục tạm hoặc save_dir từ config
         if save_dir is None:
             if os.path.exists(os.path.join(repo_vncorenlp_dir, "VnCoreNLP-1.2.jar")) and os.path.exists(os.path.join(repo_vncorenlp_dir, "models")):
                 save_dir = repo_vncorenlp_dir
@@ -46,24 +46,37 @@ class VnTextProcessor:
                 # Kiểm tra kết nối mạng đến server VnCoreNLP
                 response = requests.get("https://vncorenlp.vietnlp.ai", timeout=5)
                 if response.status_code != 200:
-                    raise RuntimeError("Không thể kết nối đến server VnCoreNLP. Kiểm tra mạng.")
+                    logger.warning("Không thể kết nối đến server VnCoreNLP. Sử dụng repo hoặc fallback.")
+                    if os.path.exists(repo_vncorenlp_dir):
+                        save_dir = repo_vncorenlp_dir
+                        logger.info(f"Sử dụng fallback từ repo: {save_dir}")
+                    else:
+                        raise RuntimeError("Không thể tải model và không có fallback từ repo.")
+                else:
+                    # Xóa toàn bộ thư mục save_dir để tránh xung đột (nếu dùng thư mục tạm)
+                    if save_dir.startswith(os.path.join(os.getenv("TMPDIR", os.getenv("TEMP", "/tmp")), "vncorenlp")):
+                        if os.path.exists(save_dir):
+                            logger.info(f"Xóa thư mục tạm xung đột: {save_dir}")
+                            shutil.rmtree(save_dir, ignore_errors=True)
+                        os.makedirs(save_dir, exist_ok=True)
 
-                # Xóa toàn bộ thư mục save_dir để tránh xung đột (nếu dùng thư mục tạm)
-                if save_dir.startswith(os.path.join(os.getenv("TMPDIR", os.getenv("TEMP", "/tmp")), "vncorenlp")):
-                    if os.path.exists(save_dir):
-                        logger.info(f"Xóa thư mục tạm xung đột: {save_dir}")
-                        shutil.rmtree(save_dir, ignore_errors=True)
-                    os.makedirs(save_dir, exist_ok=True)
-
-                # Tải model với retry nếu không dùng repo
-                self._download_model_with_retry(save_dir)
-                logger.info("Tải model thành công.")
+                    # Tải model với retry
+                    self._download_model_with_retry(save_dir)
+                    logger.info("Tải model thành công.")
             except requests.RequestException as e:
                 logger.error(f"Lỗi kết nối mạng: {str(e)}")
-                raise RuntimeError(f"Không thể tải model VnCoreNLP vào {save_dir}. Kiểm tra kết nối mạng. Error: {str(e)}")
+                if os.path.exists(repo_vncorenlp_dir):
+                    save_dir = repo_vncorenlp_dir
+                    logger.info(f"Sử dụng fallback từ repo: {save_dir}")
+                else:
+                    raise RuntimeError(f"Không thể tải model VnCoreNLP vào {save_dir}. Kiểm tra kết nối mạng. Error: {str(e)}")
             except Exception as e:
                 logger.error(f"Lỗi khi tải model: {str(e)}")
-                raise RuntimeError(f"Không thể tải model VnCoreNLP vào {save_dir}. Kiểm tra quyền write folder hoặc kết nối mạng. Error: {str(e)}")
+                if os.path.exists(repo_vncorenlp_dir):
+                    save_dir = repo_vncorenlp_dir
+                    logger.info(f"Sử dụng fallback từ repo: {save_dir}")
+                else:
+                    raise RuntimeError(f"Không thể tải model VnCoreNLP vào {save_dir}. Kiểm tra quyền write folder hoặc kết nối mạng. Error: {str(e)}")
 
         try:
             self.processor = py_vncorenlp.VnCoreNLP(
