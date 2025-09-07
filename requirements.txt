@@ -9,3 +9,4 @@ qdrant_client==1.15.1
 streamlit==1.48.0
 torch==2.7.1
 retry
+requests
