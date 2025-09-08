@@ -61,8 +61,11 @@ class VnTextProcessor:
                 f"Đảm bảo repo có thư mục 'models/vncorenlp' chứa {jar_file_name} và folder 'models'."
             )
 
+        # 🔹 Xác định repo root (2 cấp lên từ file hiện tại: /repo/models/vncorenlp/ -> /repo)
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        cur_dir = os.getcwd()
+
         try:
-            # 🔹 Không đổi cwd, chỉ dùng path tuyệt đối
             self.processor = py_vncorenlp.VnCoreNLP(
                 save_dir=VNCORENLP_SAVE_DIR,
                 annotators=annotators,
@@ -77,6 +80,10 @@ class VnTextProcessor:
             else:
                 logger.error(f"Lỗi khởi tạo VnCoreNLP: {str(e)}")
                 raise
+        finally:
+            # 🔹 Luôn reset cwd về repo root
+            os.chdir(repo_root)
+            logger.info(f"[VnTextProcessor] cwd reset về {repo_root}")
 
     def preprocess(self, text: str) -> dict:
         tokens = self.processor.word_segment(text)
