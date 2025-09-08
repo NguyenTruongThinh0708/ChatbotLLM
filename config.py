@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-
+import logging
 # Load biến môi trường từ .env (local) hoặc Streamlit secrets (cloud)
 load_dotenv()
 
@@ -40,6 +40,7 @@ if not QDRANT_API_KEY:
     raise ValueError("QDRANT_API_KEY không được cấu hình. Đặt trong .env (local) hoặc Streamlit secrets (cloud).")
 if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY không được cấu hình. Đặt trong .env (local) hoặc Streamlit secrets (cloud).")
+
 
 
 
