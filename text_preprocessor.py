@@ -7,7 +7,6 @@ from config import VNCORENLP_SAVE_DIR
 
 import subprocess
 import shutil
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +28,7 @@ def log_java_env():
     except Exception as e:
         logger.error(f"[JavaEnv] javac -version failed: {e}")
 
-# 🔹 Gọi setup trước khi log env
+# 🔹 Log environment khi khởi động
 log_java_env()
 
 _vncorenlp_instance = None
@@ -63,6 +62,7 @@ class VnTextProcessor:
             )
 
         try:
+            # 🔹 Không đổi cwd, chỉ dùng path tuyệt đối
             self.processor = py_vncorenlp.VnCoreNLP(
                 save_dir=VNCORENLP_SAVE_DIR,
                 annotators=annotators,
@@ -86,5 +86,3 @@ class VnTextProcessor:
 class DummyProcessor:
     def word_segment(self, text: str) -> list:
         return text.split()
-
-
