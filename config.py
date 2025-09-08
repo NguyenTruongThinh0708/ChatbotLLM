@@ -7,7 +7,14 @@ load_dotenv()
 # Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Thư mục chứa config.py
 PDF_PATH = os.path.join(BASE_DIR, "data", "Phần 11.pdf")
-VNCORENLP_SAVE_DIR = os.getenv("VNCORENLP_SAVE_DIR", os.path.join(BASE_DIR, "models", "vncorenlp"))
+# Đường dẫn cứng đến thư mục chứa VnCoreNLP (.jar + models/)
+VNCORENLP_SAVE_DIR = os.path.join(BASE_DIR, "models", "vncorenlp")
+# Nếu muốn kiểm tra tồn tại luôn (để tránh nhầm path)
+if not os.path.exists(os.path.join(VNCORENLP_SAVE_DIR, "VnCoreNLP-1.2.jar")):
+    raise FileNotFoundError(
+        f"Không tìm thấy VnCoreNLP jar tại {VNCORENLP_SAVE_DIR}. "
+        "Hãy chắc chắn rằng thư mục models/vncorenlp đã được commit vào repo."
+    )
 OUTPUT_LOG = os.path.join(BASE_DIR, "logs", "logs.txt")
 OUTPUT_JSON_CLEAN = os.path.join(BASE_DIR, "data", "pages_clean_mode.json")
 
@@ -30,3 +37,4 @@ if not QDRANT_API_KEY:
     raise ValueError("QDRANT_API_KEY không được cấu hình. Đặt trong .env (local) hoặc Streamlit secrets (cloud).")
 if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY không được cấu hình. Đặt trong .env (local) hoặc Streamlit secrets (cloud).")
+
