@@ -3,6 +3,8 @@ from FlagEmbedding import FlagReranker
 from vector_db import VectorDB  # Liên kết với vector_db.py
 from embedder import EmbeddingGenerator  # Liên kết với embedder.py
 from config import RERANKER_MODEL_NAME
+from huggingface_hub import login
+import os
 
 class Retriever:
     def __init__(self, vector_db: VectorDB, device=None):
@@ -19,14 +21,21 @@ class Retriever:
         self.reranker = self._load_viranker()
 
     def _load_viranker(self):
-        """
-        Load ViRanker model for reranking.
-        
-        Returns:
-            Initialized FlagReranker model.
-        """
         try:
-            reranker = FlagReranker(RERANKER_MODEL_NAME, use_fp16=False, device=self.device)
+            # Login bằng HuggingFace token
+            hf_token = os.getenv("HUGGINGFACE_HUB_TOKEN")
+            if hf_token:
+                login(hf_token)
+                print("[ViRanker] Logged in with HuggingFace token")
+            else:
+                print("[ViRanker] WARNING: No HuggingFace token found, may hit rate limit")
+    
+            # Load model từ HuggingFace
+            reranker = FlagReranker(
+                RERANKER_MODEL_NAME,
+                use_fp16=False,
+                device=self.device
+            )
             print(f"ViRanker loaded on {self.device}")
             return reranker
         except Exception as e:
@@ -74,4 +83,5 @@ class Retriever:
             return ranked_pairs[:top_k]
         except Exception as e:
             print(f"Error during reranking: {e}")
+
             return list(zip([0.0] * len(documents), documents))[:top_k]
