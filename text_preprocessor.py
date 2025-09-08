@@ -5,7 +5,32 @@ import py_vncorenlp
 from retry import retry
 from config import VNCORENLP_SAVE_DIR
 
+import subprocess
+import shutil
+import logging
+
 logger = logging.getLogger(__name__)
+
+def log_java_env():
+    java_path = shutil.which("java")
+    javac_path = shutil.which("javac")
+    logger.info(f"[JavaEnv] JAVA_HOME={os.getenv('JAVA_HOME')}")
+    logger.info(f"[JavaEnv] java path={java_path}")
+    logger.info(f"[JavaEnv] javac path={javac_path}")
+    try:
+        java_ver = subprocess.check_output(["java", "-version"], stderr=subprocess.STDOUT).decode()
+        logger.info(f"[JavaEnv] java -version:\n{java_ver}")
+    except Exception as e:
+        logger.error(f"[JavaEnv] java -version failed: {e}")
+
+    try:
+        javac_ver = subprocess.check_output(["javac", "-version"], stderr=subprocess.STDOUT).decode()
+        logger.info(f"[JavaEnv] javac -version:\n{javac_ver}")
+    except Exception as e:
+        logger.error(f"[JavaEnv] javac -version failed: {e}")
+
+# Gọi hàm log khi init
+log_java_env()
 
 _vncorenlp_instance = None
 
@@ -61,3 +86,4 @@ class VnTextProcessor:
 class DummyProcessor:
     def word_segment(self, text: str) -> list:
         return text.split()
+
