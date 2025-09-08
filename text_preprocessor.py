@@ -11,18 +11,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def run_setup_script():
-    """Chạy file setup.sh nếu có."""
-    setup_path = os.path.join(os.path.dirname(__file__), "setup.sh")
-    if os.path.exists(setup_path):
-        try:
-            output = subprocess.check_output(["bash", setup_path], stderr=subprocess.STDOUT)
-            logger.info(f"[Setup] Script executed successfully:\n{output.decode()}")
-        except subprocess.CalledProcessError as e:
-            logger.error(f"[Setup] Script failed:\n{e.output.decode()}")
-    else:
-        logger.warning(f"[Setup] Không tìm thấy file setup.sh tại {setup_path}")
-
 def log_java_env():
     java_path = shutil.which("java")
     javac_path = shutil.which("javac")
@@ -42,7 +30,6 @@ def log_java_env():
         logger.error(f"[JavaEnv] javac -version failed: {e}")
 
 # 🔹 Gọi setup trước khi log env
-run_setup_script()
 log_java_env()
 
 _vncorenlp_instance = None
@@ -99,3 +86,4 @@ class VnTextProcessor:
 class DummyProcessor:
     def word_segment(self, text: str) -> list:
         return text.split()
+
