@@ -13,3 +13,5 @@ requests
 pyjnius
 jpype1
 huggingface_hub
+bitsandbytes
+accelerate
