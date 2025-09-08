@@ -7,6 +7,8 @@ from huggingface_hub import login
 import os
 import logging
 
+logger = logging.getLogger(__name__)
+
 class Retriever:
     def __init__(self, vector_db: VectorDB, device=None):
         """
@@ -78,6 +80,7 @@ class Retriever:
             print(f"Error during reranking: {e}")
 
             return list(zip([0.0] * len(documents), documents))[:top_k]
+
 
 
 
