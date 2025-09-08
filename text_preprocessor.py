@@ -65,7 +65,7 @@ class VnTextProcessor:
         try:
             self.processor = py_vncorenlp.VnCoreNLP(
                 save_dir=VNCORENLP_SAVE_DIR,
-                annotators=",".join(annotators),
+                annotators=annotators,
                 max_heap_size='-Xmx2g'
             )
             _vncorenlp_instance = self.processor
@@ -86,4 +86,5 @@ class VnTextProcessor:
 class DummyProcessor:
     def word_segment(self, text: str) -> list:
         return text.split()
+
 
