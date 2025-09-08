@@ -31,14 +31,14 @@ class Retriever:
                 logger.info("[Retriever] Đã login vào Hugging Face Hub")
             else:
                 logger.warning("[Retriever] Không tìm thấy HUGGINGFACE_TOKEN, sẽ dùng anonymous (dễ bị 429)")
-           
+              
             logger.info(f"[Retriever] Đang load ViRanker trên device={self.device} ...")
-            # Cấu hình quantization 8-bit
+            # Cấu hình quantization 4-bit
             quantization_config = BitsAndBytesConfig(
-                load_in_8bit=True,
-                llm_int8_threshold=6.0
+                load_in_4bit=True,
+                bnb_4bit_compute_dtype=torch.float16,
+                bnb_4bit_quant_type="nf4"
             )
-
             reranker = FlagReranker(
                 RERANKER_MODEL_NAME,
                 device=self.device,
@@ -92,3 +92,4 @@ class Retriever:
         except Exception as e:
             print(f"Error during reranking: {e}")
             return list(zip([0.0] * len(documents), documents))[:top_k]
+
