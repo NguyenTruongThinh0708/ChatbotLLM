@@ -1,9 +1,9 @@
 import torch
 import re
+import logging
 from FlagEmbedding import BGEM3FlagModel
 from text_preprocessor import VnTextProcessor, DummyProcessor
-from config import EMBEDDING_MODEL_NAME, VNCORENLP_SAVE_DIR
-import logging
+from config import EMBEDDING_MODEL_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -18,21 +18,19 @@ class EmbeddingGenerator:
         self.model_name = model_name
         self.max_length = max_length
 
-        # Khởi tạo VnTextProcessor
+        # Khởi tạo VnTextProcessor (dùng config mặc định từ repo)
         try:
-            self.vncorenlp = VnTextProcessor(
-                save_dir=VNCORENLP_SAVE_DIR,
-                annotators=["wseg"]
-            )
+            self.vncorenlp = VnTextProcessor(annotators=["wseg"])
         except Exception as e:
-            logger.error(f"Không thể khởi tạo VnTextProcessor: {str(e)}")
+            logger.error(f"[EmbeddingGenerator] Không thể khởi tạo VnTextProcessor: {str(e)}")
             raise RuntimeError(f"Khởi tạo VnTextProcessor thất bại: {str(e)}")
 
         if isinstance(self.vncorenlp.processor, DummyProcessor):
-            logger.warning("Dùng DummyProcessor, tách từ sẽ không chính xác.")
+            logger.warning("[EmbeddingGenerator] Dùng DummyProcessor, tách từ sẽ không chính xác.")
 
         # Khởi tạo mô hình embedding
         self.model = BGEM3FlagModel(model_name, device=device)
+        logger.info(f"[EmbeddingGenerator] Embedding model {model_name} khởi tạo thành công trên {device}.")
 
     def embed_query(self, processed_text):
         try:
@@ -44,7 +42,7 @@ class EmbeddingGenerator:
             else:
                 raise ValueError("Embedding không chứa 'dense_vecs'.")
         except Exception as e:
-            logger.error(f"Lỗi khi tính embedding cho query: {str(e)}")
+            logger.error(f"[EmbeddingGenerator] Lỗi khi tính embedding cho query: {str(e)}")
             return [0.0] * self.get_dense_size()
 
     def embed_documents(self, texts):
@@ -58,7 +56,7 @@ class EmbeddingGenerator:
     def preprocess_and_tokenize(self, text):
         try:
             if self.vncorenlp is None or isinstance(self.vncorenlp.processor, DummyProcessor):
-                logger.warning("VnCoreNLP không khả dụng, trả về text gốc.")
+                logger.warning("[EmbeddingGenerator] VnCoreNLP không khả dụng, trả về text gốc.")
                 return text.strip().lower()
             # Chuẩn hóa
             text = text.strip().lower()
@@ -68,7 +66,7 @@ class EmbeddingGenerator:
             tokens = [re.sub(r'\s+', ' ', word).strip() for word in tokens]
             return " ".join(tokens)
         except Exception as e:
-            logger.error(f"Lỗi khi tiền xử lý và tokenize: {str(e)}")
+            logger.error(f"[EmbeddingGenerator] Lỗi khi tiền xử lý và tokenize: {str(e)}")
             return text.strip().lower()
 
     def get_dense_size(self):
