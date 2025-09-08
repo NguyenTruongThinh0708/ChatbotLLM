@@ -22,7 +22,7 @@ class Retriever:
         """
         self.vector_db = vector_db
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.reranker = self._load_viranker()
+        #self.reranker = self._load_viranker()
 
     def _load_viranker(self):
         try:
@@ -92,4 +92,5 @@ class Retriever:
         except Exception as e:
             print(f"Error during reranking: {e}")
             return list(zip([0.0] * len(documents), documents))[:top_k]
+
 
