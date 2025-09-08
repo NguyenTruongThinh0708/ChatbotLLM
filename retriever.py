@@ -1,20 +1,21 @@
 import torch
 from FlagEmbedding import FlagReranker
-from vector_db import VectorDB  # Liên kết với vector_db.py
-from embedder import EmbeddingGenerator  # Liên kết với embedder.py
+from vector_db import VectorDB
+from embedder import EmbeddingGenerator
 from config import RERANKER_MODEL_NAME
 from huggingface_hub import login
 import os
 import logging
+from transformers import BitsAndBytesConfig
 
 logger = logging.getLogger(__name__)
-HF_TOKEN = os.getenv("HUGGINGFACE_HUB_TOKEN")  # token lấy từ .env hoặc config
+HF_TOKEN = os.getenv("HUGGINGFACE_HUB_TOKEN")
 
 class Retriever:
     def __init__(self, vector_db: VectorDB, device=None):
         """
         Initialize Retriever with vector database and ViRanker.
-        
+       
         Args:
             vector_db: VectorDB instance for Qdrant access.
             device: Device to run ViRanker ('cpu' or 'cuda').
@@ -30,11 +31,18 @@ class Retriever:
                 logger.info("[Retriever] Đã login vào Hugging Face Hub")
             else:
                 logger.warning("[Retriever] Không tìm thấy HUGGINGFACE_TOKEN, sẽ dùng anonymous (dễ bị 429)")
-            
+           
             logger.info(f"[Retriever] Đang load ViRanker trên device={self.device} ...")
+            # Cấu hình quantization 8-bit
+            quantization_config = BitsAndBytesConfig(
+                load_in_8bit=True,
+                llm_int8_threshold=6.0
+            )
+
             reranker = FlagReranker(
                 RERANKER_MODEL_NAME,
-                device=self.device
+                device=self.device,
+                quantization_config=quantization_config  # Thêm quantization
             )
             logger.info(f"[Retriever] ViRanker load thành công (device={self.device})")
             return reranker
@@ -45,11 +53,11 @@ class Retriever:
     def retrieve(self, query_embedding, limit=5):
         """
         Retrieve relevant documents from Qdrant vector database.
-        
+       
         Args:
             query_embedding: Embedding vector of the query.
             limit: Maximum number of results.
-            
+           
         Returns:
             List of search results.
         """
@@ -66,13 +74,13 @@ class Retriever:
     def rerank(self, query, documents, top_k=1, normalize=True):
         """
         Rerank documents based on relevance to the query using ViRanker.
-        
+       
         Args:
             query: Query string.
             documents: List of document strings to rerank.
             top_k: Number of top documents to return.
             normalize: Whether to normalize scores.
-            
+           
         Returns:
             List of tuples (score, document) sorted by score.
         """
@@ -83,10 +91,4 @@ class Retriever:
             return ranked_pairs[:top_k]
         except Exception as e:
             print(f"Error during reranking: {e}")
-
             return list(zip([0.0] * len(documents), documents))[:top_k]
-
-
-
-
-
