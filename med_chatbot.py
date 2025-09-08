@@ -2,29 +2,38 @@ import sys
 import os
 import torch
 import streamlit as st
-
+import logging
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from embedder import EmbeddingGenerator
 from vector_db import VectorDB
 from retriever import Retriever
 from generator import Generator
 
+logger = logging.getLogger(__name__)
+
+@st.cache_resource
 def init_components():
-    st.write("[LOG] Khởi tạo các module...")
-    st.write("[LOG] -> Khởi tạo EmbeddingGenerator...")
+    logger.info("[LOG] Khởi tạo các module...")
+
+    logger.info("[LOG] -> Khởi tạo EmbeddingGenerator...")
     embedder = EmbeddingGenerator()
-    st.write("[LOG] ✅ EmbeddingGenerator OK")
-    st.write("[LOG] -> Khởi tạo VectorDB...")
+    logger.info("[LOG] ✅ EmbeddingGenerator OK")
+
+    logger.info("[LOG] -> Khởi tạo VectorDB...")
     vector_db = VectorDB()
-    st.write("[LOG] ✅ VectorDB OK")
+    logger.info("[LOG] ✅ VectorDB OK")
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    st.write(f"[LOG] -> Khởi tạo Retriever (device={device})...")
+    logger.info(f"[LOG] -> Khởi tạo Retriever (device={device})...")
     retriever = Retriever(vector_db, device=device)
-    st.write("[LOG] ✅ Retriever OK")
-    st.write("[LOG] -> Khởi tạo Generator...")
+    logger.info("[LOG] ✅ Retriever OK")
+
+    logger.info("[LOG] -> Khởi tạo Generator...")
     generator = Generator(embedder, retriever)
-    st.write("[LOG] ✅ Generator OK")
-    st.write("[LOG] 🎉 Tất cả module khởi tạo thành công.")
+    logger.info("[LOG] ✅ Generator OK")
+
+    logger.info("[LOG] 🎉 Tất cả module khởi tạo thành công.")
+
     return embedder, vector_db, retriever, generator
 
 embedder, vector_db, retriever, generator = init_components()
@@ -53,3 +62,4 @@ if query := st.chat_input("Nhập câu hỏi: "):
     st.session_state.messages.append({"role": "assistant", "content": response})
     with st.chat_message("assistant"):
         st.markdown(response)
+
