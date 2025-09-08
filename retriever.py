@@ -8,6 +8,7 @@ import os
 import logging
 
 logger = logging.getLogger(__name__)
+HF_TOKEN = os.getenv("HUGGINGFACE_HUB_TOKEN")  # token lấy từ .env hoặc config
 
 class Retriever:
     def __init__(self, vector_db: VectorDB, device=None):
@@ -19,14 +20,18 @@ class Retriever:
             device: Device to run ViRanker ('cpu' or 'cuda').
         """
         self.vector_db = vector_db
-        #self.device = "cuda" if device is None and torch.cuda.is_available() else device or "cpu"
-        self.device = "cuda"
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.reranker = self._load_viranker()
 
     def _load_viranker(self):
         try:
+            if HF_TOKEN:
+                login(token=HF_TOKEN)
+                logger.info("[Retriever] Đã login vào Hugging Face Hub")
+            else:
+                logger.warning("[Retriever] Không tìm thấy HUGGINGFACE_TOKEN, sẽ dùng anonymous (dễ bị 429)")
+            
             logger.info(f"[Retriever] Đang load ViRanker trên device={self.device} ...")
-            # Bỏ hẳn use_fp16
             reranker = FlagReranker(
                 RERANKER_MODEL_NAME,
                 device=self.device
@@ -80,6 +85,7 @@ class Retriever:
             print(f"Error during reranking: {e}")
 
             return list(zip([0.0] * len(documents), documents))[:top_k]
+
 
 
 
