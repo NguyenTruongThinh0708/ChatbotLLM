@@ -12,16 +12,23 @@ from generator import Generator
 @st.cache_resource
 def init_components():
     print("[LOG] Khởi tạo các module...")
-    print("[LOG] Đang khởi tạo EmbeddingGenerator...")
     embedder = EmbeddingGenerator()
-    print("[LOG] Đang khởi tạo VectorDB...")
+    print("[LOG] EmbeddingGenerator OK")
+
     vector_db = VectorDB()
-    print("[LOG] Đang khởi tạo Retriever...")
-    retriever = Retriever(vector_db, device="cpu")
-    print("[LOG] Đang khởi tạo Generator...")
+    print("[LOG] VectorDB OK")
+
+    # Cho phép chọn device động (nếu có GPU)
+    device = "cuda" if os.environ.get("CUDA_VISIBLE_DEVICES") else "cpu"
+    retriever = Retriever(vector_db, device=device)
+    print(f"[LOG] Retriever OK (device={device})")
+
     generator = Generator(embedder, retriever)
+    print("[LOG] Generator OK")
+
     print("[LOG] Khởi tạo hoàn tất.")
-    return data_preprocessor, embedder, vector_db, retriever, generator
+    return embedder, vector_db, retriever, generator
+
 
 # Gọi hàm khởi tạo
 embedder, vector_db, retriever, generator = init_components()
@@ -50,18 +57,17 @@ if query := st.chat_input("Nhập câu hỏi: "):
     retrieve_results = retriever.retrieve(query_embedding)
     documents = [result.payload["content"] for result in retrieve_results]
     ranked_results = retriever.rerank(query, documents)
-    print("\nKết quả sau khi rerank (top 1):")
+
     context = "\n".join([f"{i+1}. {content}" for i, (_, content) in enumerate(ranked_results)])
+    print("\nKết quả sau khi rerank (top 1):")
     print(context)
     print("\n")
+
     print("[LOG] Đang sinh câu trả lời...")
     response = generator.generate(query, context)
 
     st.session_state.messages.append({"role": "assistant", "content": response})
     with st.chat_message("assistant"):
         st.markdown(response)
-    
 
     print("[LOG] Hoàn tất phản hồi.")
-
-
