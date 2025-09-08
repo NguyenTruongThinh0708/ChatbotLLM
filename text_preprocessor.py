@@ -62,7 +62,7 @@ class VnTextProcessor:
             )
 
         # 🔹 Xác định repo root (2 cấp lên từ file hiện tại: /repo/models/vncorenlp/ -> /repo)
-        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        repo_root = "/mount/src/chatbotllm"
         cur_dir = os.getcwd()
 
         try:
@@ -93,3 +93,4 @@ class VnTextProcessor:
 class DummyProcessor:
     def word_segment(self, text: str) -> list:
         return text.split()
+
