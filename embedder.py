@@ -1,7 +1,7 @@
 import torch
 import re
 from FlagEmbedding import BGEM3FlagModel
-from text_preprocessor import VnTextProcessor
+from text_preprocessor import VnTextProcessor, DummyProcessor
 from config import EMBEDDING_MODEL_NAME, VNCORENLP_SAVE_DIR
 import logging
 
@@ -17,21 +17,20 @@ class EmbeddingGenerator:
         self.device = device
         self.model_name = model_name
         self.max_length = max_length
+
         # Khởi tạo VnTextProcessor
         try:
             self.vncorenlp = VnTextProcessor(
                 save_dir=VNCORENLP_SAVE_DIR,
                 annotators=["wseg"]
-            ).processor
+            )
         except Exception as e:
             logger.error(f"Không thể khởi tạo VnTextProcessor: {str(e)}")
             raise RuntimeError(f"Khởi tạo VnTextProcessor thất bại: {str(e)}")
-        
-        # Kiểm tra DummyProcessor
-        from text_preprocessor import DummyProcessor
-        if isinstance(self.vncorenlp, DummyProcessor):
+
+        if isinstance(self.vncorenlp.processor, DummyProcessor):
             logger.warning("Dùng DummyProcessor, tách từ sẽ không chính xác.")
-        
+
         # Khởi tạo mô hình embedding
         self.model = BGEM3FlagModel(model_name, device=device)
 
@@ -46,9 +45,11 @@ class EmbeddingGenerator:
                 raise ValueError("Embedding không chứa 'dense_vecs'.")
         except Exception as e:
             logger.error(f"Lỗi khi tính embedding cho query: {str(e)}")
-            return [0.0] * 1024
+            return [0.0] * self.get_dense_size()
 
     def embed_documents(self, texts):
+        if isinstance(texts, str):
+            texts = [texts]
         embeddings = self.model.encode(texts)
         if isinstance(embeddings, dict) and 'dense_vecs' in embeddings:
             return [v.tolist() for v in embeddings['dense_vecs']]
@@ -56,7 +57,7 @@ class EmbeddingGenerator:
 
     def preprocess_and_tokenize(self, text):
         try:
-            if self.vncorenlp is None or isinstance(self.vncorenlp, DummyProcessor):
+            if self.vncorenlp is None or isinstance(self.vncorenlp.processor, DummyProcessor):
                 logger.warning("VnCoreNLP không khả dụng, trả về text gốc.")
                 return text.strip().lower()
             # Chuẩn hóa
