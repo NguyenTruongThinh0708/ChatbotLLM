@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 # Load biến môi trường từ .env (local) hoặc Streamlit secrets (cloud)
 load_dotenv()
 
-PDF_PATH = os.path.join(BASE_DIR, "data", "Phần 11.pdf")
 # Setup logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,6 +17,7 @@ VNCORENLP_SAVE_DIR = os.path.join(BASE_DIR, "models", "vncorenlp")
 # Log để debug
 logger.info(f"[CONFIG] BASE_DIR = {BASE_DIR}")
 logger.info(f"[CONFIG] VNCORENLP_SAVE_DIR = {VNCORENLP_SAVE_DIR}")
+PDF_PATH = os.path.join(BASE_DIR, "data", "Phần 11.pdf")
 OUTPUT_LOG = os.path.join(BASE_DIR, "logs", "logs.txt")
 OUTPUT_JSON_CLEAN = os.path.join(BASE_DIR, "data", "pages_clean_mode.json")
 
@@ -40,5 +40,6 @@ if not QDRANT_API_KEY:
     raise ValueError("QDRANT_API_KEY không được cấu hình. Đặt trong .env (local) hoặc Streamlit secrets (cloud).")
 if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY không được cấu hình. Đặt trong .env (local) hoặc Streamlit secrets (cloud).")
+
 
 
