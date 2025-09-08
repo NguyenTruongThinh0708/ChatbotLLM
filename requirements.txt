@@ -11,3 +11,4 @@ torch==2.7.1
 retry
 requests
 pyjnius
+jpype1
