@@ -12,3 +12,4 @@ retry
 requests
 pyjnius
 jpype1
+huggingface_hub
