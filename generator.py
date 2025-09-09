@@ -39,18 +39,19 @@ class Generator:
             print(f"Error loading LLM: {e}")
             raise
 
-    def generate(self, query, context):
+    def generate(self, query, context, history=""):
         """
-        Process query, retrieve documents, rerank, and generate response.
+        Process query with optional conversation history and generate response.
         
         Args:
             query: User query string.
+            context: Retrieved context from vector DB.
+            history: Optional conversation history string.
             
         Returns:
-            Tuple of (response, embedding_time, generate_time, total_time).
+            Response string from LLM.
         """
         try:
-            # Generate response with LLM
             # Prompt
             prompt = ChatPromptTemplate.from_messages([
                 ("system",
@@ -67,8 +68,9 @@ class Generator:
                     "6. Trả lời không quá 250 từ và luôn kết thúc bằng <END_OF_ANSWER>."
                 ),
                 ("user",
-                    f"Dựa trên thông tin sau:\n{context}\n"
-                    f"Hãy trả lời câu hỏi: {query}\n\n"
+                    f"Lịch sử hội thoại gần đây:\n{history}\n\n"
+                    f"Ngữ cảnh thêm từ cơ sở tri thức:\n{context}\n\n"
+                    f"Câu hỏi hiện tại: {query}\n\n"
                     "Trả lời theo đúng hướng dẫn trên, kết thúc bằng <END_OF_ANSWER>."
                 )
             ])
@@ -76,8 +78,4 @@ class Generator:
             response = chain.invoke({})
             return response
         except Exception as e:
-
             return f"Error: {e}", 0, 0, 0
-
-
-
