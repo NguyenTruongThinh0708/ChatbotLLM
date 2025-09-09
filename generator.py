@@ -30,7 +30,7 @@ class Generator:
             llm = ChatGroq(
                 model="llama-3.1-8b-instant",
                 temperature=0.1,
-                max_tokens=200,
+                max_tokens=500,
                 api_key=GROQ_API_KEY
             )
             return llm
@@ -84,4 +84,5 @@ class Generator:
         except Exception as e:
 
             return f"Error: {e}", 0, 0, 0
+
 
