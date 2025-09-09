@@ -50,7 +50,7 @@ class Retriever:
             logger.error(f"[Retriever] ViRanker load thất bại: {e}", exc_info=True)
             raise
 
-    def retrieve(self, query_embedding, limit=5):
+    def retrieve(self, query_embedding, limit=3):
         """
         Retrieve relevant documents from Qdrant vector database.
        
@@ -92,5 +92,6 @@ class Retriever:
         except Exception as e:
             print(f"Error during reranking: {e}")
             return list(zip([0.0] * len(documents), documents))[:top_k]
+
 
 
