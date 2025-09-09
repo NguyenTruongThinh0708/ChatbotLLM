@@ -63,7 +63,7 @@ class Retriever:
         """
         try:
             search_result = self.vector_db.search(query_vector=query_embedding, limit=limit)
-            print("\nInitial search results (top 5):")
+            print("\nInitial search results (top 3):")
             for i, result in enumerate(search_result):
                 print(f"ID: {result.id}, Score: {result.score:.4f}, Content: {result.payload['content'][:100]}...")
             return search_result
@@ -92,6 +92,7 @@ class Retriever:
         except Exception as e:
             print(f"Error during reranking: {e}")
             return list(zip([0.0] * len(documents), documents))[:top_k]
+
 
 
 
