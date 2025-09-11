@@ -16,30 +16,16 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# ======= Tạo list giờ (5h-11h, 13h-17h, cách 30p) =======
+# ======= Tạo list khung giờ (1 tiếng, loại giờ trưa) =======
 def generate_time_slots():
     slots = []
-    # Buổi sáng
-    t = datetime.time(5, 0)
-    while t < datetime.time(11, 30):
-        slots.append(t.strftime("%H:%M"))
-        h, m = t.hour, t.minute
-        m += 30
-        if m == 60:
-            h += 1
-            m = 0
-        t = datetime.time(h, m)
-    # Buổi chiều
-    t = datetime.time(13, 0)
-    while t <= datetime.time(17, 0):
-        slots.append(t.strftime("%H:%M"))
-        h, m = t.hour, t.minute
-        m += 30
-        if m == 60:
-            h += 1
-            m = 0
-        if h > 17: break
-        t = datetime.time(h, m)
+    for hour in range(5, 17):
+        start = datetime.time(hour, 0)
+        end = datetime.time(hour+1, 0)
+        # Bỏ các khung giờ nằm trong khoảng 11:00–13:00
+        if start >= datetime.time(11, 0) and start < datetime.time(13, 0):
+            continue
+        slots.append(f"{start.strftime('%H:%M')} - {end.strftime('%H:%M')}")
     return slots
 
 time_slots = generate_time_slots()
@@ -56,8 +42,12 @@ if st.session_state.step == "ask_form":
     with st.chat_message("assistant"):
         with st.form("booking_form"):
             today = datetime.date.today()
-            date = st.date_input("Ngày mong muốn", min_value=today)
-            time = st.selectbox("Giờ khám", time_slots)
+            min_day = today + datetime.timedelta(days=1)
+            max_day = today + datetime.timedelta(days=15)
+
+            date = st.date_input("Ngày mong muốn", min_value=min_day, max_value=max_day)
+            time = st.selectbox("Khung giờ khám", time_slots)
+
             submitted = st.form_submit_button("Submit")
             if submitted:
                 st.session_state.form_data = {
