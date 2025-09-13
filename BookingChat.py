@@ -237,11 +237,32 @@ if st.session_state.stage == "form":
             value=st.session_state.get("user_name", ""),
             placeholder="Nhập họ tên (bắt buộc)"
         )
-        # Ngày
+
+        # Ngày (nhập tay dd/mm/yyyy)
         today = datetime.date.today()
         min_day = today + datetime.timedelta(days=1)
         max_day = today + datetime.timedelta(days=15)
-        date = st.date_input("Chọn ngày khám (Trong vòng 2 tuần)",  min_value=min_day, max_value=max_day)
+
+        date_str = st.text_input(
+            "Chọn ngày khám (dd/mm/yyyy) (Trong vòng 2 tuần)",
+            placeholder="VD: 17/09/2025"
+        )
+
+        date = None
+        if date_str:
+            try:
+                parsed_date = datetime.datetime.strptime(date_str, "%d/%m/%Y").date()
+                # Kiểm tra nằm trong khoảng hợp lệ
+                if parsed_date < min_day or parsed_date > max_day:
+                    st.error(
+                        f"⚠️ Ngày phải từ {min_day.strftime('%d/%m/%Y')} "
+                        f"đến {max_day.strftime('%d/%m/%Y')} (không được chọn hôm nay hoặc quá khứ)"
+                    )
+                else:
+                    date = parsed_date
+            except ValueError:
+                st.error("⚠️ Sai định dạng, hãy nhập đúng dd/mm/yyyy")
+
         # Giờ
         time = st.selectbox("Chọn giờ khám", time_slots)
         # Chi nhánh
@@ -252,6 +273,8 @@ if st.session_state.stage == "form":
         # Kiểm tra họ tên có hợp lệ không
         if not is_valid_name(name):
             st.error("⚠️ Họ tên không hợp lệ. Vui lòng nhập lại.")
+        elif not date:
+            st.error("⚠️ Ngày không hợp lệ. Vui lòng nhập lại.")
         else:
             # lưu booking tạm
             st.session_state.booking = {
@@ -264,6 +287,7 @@ if st.session_state.stage == "form":
             st.session_state.email_saved = None
             st.session_state.stage = "contact"
             st.rerun()
+
 
 # ---------------------------
 # Stage: CONTACT - thông tin liên hệ
@@ -385,7 +409,7 @@ elif st.session_state.stage == "done":
             "**Đã xác nhận** lịch hẹn khám của bạn:\n\n"
             f"**Ngày khám:** {b['date'].strftime('%d/%m/%Y')} lúc {b['time']}\n\n"
             f"**Địa điểm:** Bệnh viện Hehe chi nhánh {b['location']}\n\n"
-            "Vui lòng **đến trước giờ hẹn 15 tới 30 phút** để làm thủ tục bạn nhé!\n\n"
+            "Vui lòng **đến trước giờ hẹn 30 phút** để làm thủ tục bạn nhé!\n\n"
             "Quy trình đặt lịch khám đã hoàn tất, bạn có thể an tâm đến khám 😊"
         )
     else:
@@ -395,7 +419,7 @@ elif st.session_state.stage == "done":
             f"**Địa điểm:** Bệnh viện Hehe chi nhánh {b['location']}\n\n"
             f"**Thông báo sẽ gửi qua email:** {st.session_state.email_saved}\n\n"
             f"Chúng tôi sẽ gửi thông báo nhắc bạn trước 1 ngày qua kênh liên lạc ở trên.\n\n"
-            "Vui lòng **đến trước giờ hẹn 15 tới 30 phút** để làm thủ tục bạn nhé!\n\n"
+            "Vui lòng **đến trước giờ hẹn 30 phút** để làm thủ tục bạn nhé!\n\n"
             "Quy trình đặt lịch khám đã hoàn tất, bạn có thể an tâm đến khám 😊"
         )
 
@@ -540,4 +564,3 @@ elif st.session_state.stage == "canceled":
 #     },
 #     "email_saved": st.session_state.email_saved
 # })
-
