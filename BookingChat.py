@@ -238,31 +238,11 @@ if st.session_state.stage == "form":
             placeholder="Nhập họ tên (bắt buộc)"
         )
 
-        # Ngày (nhập tay dd/mm/yyyy)
-        today = datetime.date.today()
-        min_day = today + datetime.timedelta(days=1)
-        max_day = today + datetime.timedelta(days=15)
-
-        date_str = st.text_input(
-            "Chọn ngày khám (dd/mm/yyyy) (Trong vòng 2 tuần)",
-            placeholder="VD: 17/09/2025"
-        )
-
-        date = None
-        if date_str:
-            try:
-                parsed_date = datetime.datetime.strptime(date_str, "%d/%m/%Y").date()
-                # Kiểm tra nằm trong khoảng hợp lệ
-                if parsed_date < min_day or parsed_date > max_day:
-                    st.error(
-                        f"⚠️ Ngày phải từ {min_day.strftime('%d/%m/%Y')} "
-                        f"đến {max_day.strftime('%d/%m/%Y')} (không được chọn hôm nay hoặc quá khứ)"
-                    )
-                else:
-                    date = parsed_date
-            except ValueError:
-                st.error("⚠️ Sai định dạng, hãy nhập đúng dd/mm/yyyy")
-
+        # Ngày 
+        today = datetime.date.today() 
+        min_day = today + datetime.timedelta(days=1) 
+        max_day = today + datetime.timedelta(days=14) 
+        date = st.date_input("Chọn ngày khám (Trong vòng 2 tuần)", min_value=min_day, max_value=max_day)
         # Giờ
         time = st.selectbox("Chọn giờ khám", time_slots)
         # Chi nhánh
@@ -404,12 +384,13 @@ elif st.session_state.stage == "confirm":
 elif st.session_state.stage == "done":
     b = st.session_state.booking
     st.markdown("### ✅ Lịch đã được xác nhận")
-    if st.session_state.email_saved == None:
+    if st.session_state.email_saved is None:
         st.markdown(
             "**Đã xác nhận** lịch hẹn khám của bạn:\n\n"
             f"**Ngày khám:** {b['date'].strftime('%d/%m/%Y')} lúc {b['time']}\n\n"
             f"**Địa điểm:** Bệnh viện Hehe chi nhánh {b['location']}\n\n"
             "Vui lòng **đến trước giờ hẹn 30 phút** để làm thủ tục bạn nhé!\n\n"
+            "_(Bạn không cung cấp email nên hệ thống sẽ không gửi thư xác nhận.)_\n\n"
             "Quy trình đặt lịch khám đã hoàn tất, bạn có thể an tâm đến khám 😊"
         )
     else:
@@ -423,40 +404,37 @@ elif st.session_state.stage == "done":
             "Quy trình đặt lịch khám đã hoàn tất, bạn có thể an tâm đến khám 😊"
         )
 
-    data = {
-        "TenBenhVien": "Hehe",
-        "MaDatLich": f"HEHE-{b['date'].strftime('%Y%m%d')}-00001",
-        "HoTen": f"{b['name']}",
-        "Ngay": f"{b['date'].strftime('%d/%m/%Y')}",
-        "Gio": f"{b['time']}",
-        "ChiNhanh": f"{b['location']}",
-        "DiaChi": "123 Đường ABC, Quận Thủ Đức, TP.HCM",
-        "Hotline": "1900 1234",
-        "EmailCSKH": "cskh@bvhehe.vn",
-        "ZaloChatLink": "https://zalo.me/19001234",
-        "LinkDoiHuy": "https://benhvienhehe.vn/doi-huy",
-        "GioLamViec": "07:00 - 19:00 (Thứ 2 - CN)",
-        "Website": "https://benhvienhehe.vn"
-    }
+        data = {
+            "TenBenhVien": "Hehe",
+            "MaDatLich": f"HEHE-{b['date'].strftime('%Y%m%d')}-00001",
+            "HoTen": f"{b['name']}",
+            "Ngay": f"{b['date'].strftime('%d/%m/%Y')}",
+            "Gio": f"{b['time']}",
+            "ChiNhanh": f"{b['location']}",
+            "DiaChi": "123 Đường ABC, Quận Thủ Đức, TP.HCM",
+            "Hotline": "1900 1234",
+            "EmailCSKH": "cskh@bvhehe.vn",
+            "ZaloChatLink": "https://zalo.me/19001234",
+            "LinkDoiHuy": "https://benhvienhehe.vn/doi-huy",
+            "GioLamViec": "07:00 - 19:00 (Thứ 2 - CN)",
+            "Website": "https://benhvienhehe.vn"
+        }
 
-    subject, body = write_confirm_email(data)
-    send_email(st.session_state.email_saved, from_email_default, password_default, subject, body)
+        subject, body = write_confirm_email(data)
+        send_email(st.session_state.email_saved, from_email_default, password_default, subject, body)
 
-    # st.markdown("Bạn muốn thực hiện hành động nào tiếp theo?")
     col_change, col_cancel = st.columns(2)
 
-    # Đổi lịch
     if col_change.button("Đổi lịch hẹn"):
-        # quay về bước 1 để chọn lại (xóa booking hiện tại hoặc giữ tạm tuỳ bạn; ở đây ta xóa)
         st.session_state.booking = None
         st.session_state.stage = "form"
         st.rerun()
 
-    # Hủy lịch
     if col_cancel.button("Hủy lịch hẹn"):
         st.session_state.booking["status"] = "cancelling"
         st.session_state.stage = "cancelling"
         st.rerun()
+
 
 
 # ---------------------------
@@ -517,38 +495,41 @@ elif st.session_state.stage == "canceled":
             "Thông tin lịch hẹn khám đã HỦY của bạn:\n\n"
             f"**Ngày khám:** {b['date'].strftime('%d/%m/%Y')} lúc {b['time']}\n\n"
             f"**Địa điểm:** Bệnh viện Hehe chi nhánh {b['location']}\n\n"
-            f"**Thông báo sẽ gửi qua email:** {st.session_state.email_saved}\n\n"
+            f"**Thông báo sẽ gửi qua email:** {st.session_state.email_saved or 'Không có'}\n\n"
             "Chúng tôi sẽ gửi thông tin xác nhận hủy lịch qua thông tin liên hệ trên."
         )
     else:
         st.markdown("Lịch trước đó đã bị huỷ.")
 
-    data = {
-        "TenBenhVien": "Hehe",
-        "MaDatLich": f"HEHE-{b['date'].strftime('%Y%m%d')}-00001",
-        "LyDoHuy": f"{st.session_state.cancel_reason}",
-        "NgayHuy": f"{datetime.datetime.now()}",
-        "HoTen": f"{b['name']}",
-        "Ngay": f"{b['date'].strftime('%d/%m/%Y')}",
-        "Gio": f"{b['time']}",
-        "ChiNhanh": f"{b['location']}",
-        "DiaChi": "123 Đường ABC, Quận Thủ Đức, TP.HCM",
-        "Hotline": "1900 1234",
-        "EmailCSKH": "cskh@bvhehe.vn",
-        "ZaloChatLink": "https://zalo.me/19001234",
-        "LinkDoiHuy": "https://benhvienhehe.vn/doi-huy",
-        "GioLamViec": "07:00 - 19:00 (Thứ 2 - CN)",
-        "Website": "https://benhvienhehe.vn"
-    }
+    if st.session_state.email_saved:
+        data = {
+            "TenBenhVien": "Hehe",
+            "MaDatLich": f"HEHE-{b['date'].strftime('%Y%m%d')}-00001",
+            "LyDoHuy": f"{st.session_state.cancel_reason}",
+            "NgayHuy": f"{datetime.datetime.now()}",
+            "HoTen": f"{b['name']}",
+            "Ngay": f"{b['date'].strftime('%d/%m/%Y')}",
+            "Gio": f"{b['time']}",
+            "ChiNhanh": f"{b['location']}",
+            "DiaChi": "123 Đường ABC, Quận Thủ Đức, TP.HCM",
+            "Hotline": "1900 1234",
+            "EmailCSKH": "cskh@bvhehe.vn",
+            "ZaloChatLink": "https://zalo.me/19001234",
+            "LinkDoiHuy": "https://benhvienhehe.vn/doi-huy",
+            "GioLamViec": "07:00 - 19:00 (Thứ 2 - CN)",
+            "Website": "https://benhvienhehe.vn"
+        }
 
-    subject, body = write_cancel_email(data)
-    send_email(st.session_state.email_saved, from_email_default, password_default, subject, body)
-    
-    # Cung cấp nút để đặt lịch mới
+        subject, body = write_cancel_email(data)
+        send_email(st.session_state.email_saved, from_email_default, password_default, subject, body)
+    else:
+        st.info("Bạn không cung cấp email, nên hệ thống sẽ không gửi thư xác nhận hủy.")
+
     if st.button("Đặt lịch mới"):
         st.session_state.booking = None
         st.session_state.stage = "form"
         st.rerun()
+
 
 
 # ---------------------------
