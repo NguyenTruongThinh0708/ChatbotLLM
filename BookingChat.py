@@ -530,13 +530,14 @@ elif st.session_state.stage == "canceled":
 # ---------------------------
 # (Optional) Small status panel (luôn hiển thị)
 # ---------------------------
-st.divider()
-st.markdown("#### Trạng thái hiện tại (debug):")
-st.write({
-    "stage": st.session_state.stage,
-    "booking": {
-        k: (v.strftime("%d/%m/%Y") if isinstance(v, datetime.date) else v)
-        for k, v in (st.session_state.booking or {}).items()
-    },
-    "email_saved": st.session_state.email_saved
-})
+# st.divider()
+# st.markdown("#### Trạng thái hiện tại (debug):")
+# st.write({
+#     "stage": st.session_state.stage,
+#     "booking": {
+#         k: (v.strftime("%d/%m/%Y") if isinstance(v, datetime.date) else v)
+#         for k, v in (st.session_state.booking or {}).items()
+#     },
+#     "email_saved": st.session_state.email_saved
+# })
+
